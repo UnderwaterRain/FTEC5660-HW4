@@ -1,24 +1,26 @@
 # FTEC5660 Homework 4
 
+## Homework 4 solution
+
 ### Pipeline
 
 ```mermaid
 flowchart TD
-    A\\\\\\\\\\\\\\\["HTML documents"] --> B\\\\\\\\\\\\\\\["Extract document metadata"]
-    B --> C\\\\\\\\\\\\\\\["Convert tables to labeled rows"]
-    C --> D\\\\\\\\\\\\\\\["Split text and tables separately; retain order and captions"]
-    D --> E\\\\\\\\\\\\\\\["Build lexical BM25 index"]
-    Q\\\\\\\\\\\\\\\["Question"] --> P\\\\\\\\\\\\\\\["Parse companies, year and document type"]
+    A\["HTML documents"] --> B\["Extract document metadata"]
+    B --> C\["Convert tables to labeled rows"]
+    C --> D\["Split text and tables separately; retain order and captions"]
+    D --> E\["Build lexical BM25 index"]
+    Q\["Question"] --> P\["Parse companies, year and document type"]
     P --> R{"Company and annual-report year covered?"}
     E --> R
-    R -->|No| N\\\\\\\\\\\\\\\["Return empty list"]
-    R -->|Yes| F\\\\\\\\\\\\\\\["Filter candidates by company and document type"]
-    F --> G\\\\\\\\\\\\\\\["Normalize query; BM25 top five"]
+    R -->|No| N\["Return empty list"]
+    R -->|Yes| F\["Filter candidates by company and document type"]
+    F --> G\["Normalize query; BM25 top five"]
     G --> H{"Evidence clearly insufficient?"}
     H -->|Yes| N
-    H -->|No or uncertain| I\\\\\\\\\\\\\\\["Return original chunks"]
-    I --> J\\\\\\\\\\\\\\\["Provided fixed generator"]
-    N --> K\\\\\\\\\\\\\\\["NOT\\\\\\\\\\\\\\\_FOUND"]
+    H -->|No or uncertain| I\["Return original chunks"]
+    I --> J\["Provided fixed generator"]
+    N --> K\["NOT\_FOUND"]
 ```
 
 The parser reads the company, document type and reporting year from the document opening. HTML tables are converted into rows containing their labels, column headers and original cell values, with captions retained for units. V6 traverses the document in order and splits narrative and tables separately: every chunk is at most 1,500 characters, with source, company, fiscal\_year and doc\_type metadata; table captions are repeated on their table chunks. BM25 indexes normalized lexical tokens. A question parser uses the provided make\_llm() and caches results within the current process. The retriever uses normalized company identities and document type to filter candidates, removes company names from the ranking query because identity is already represented by metadata, and returns at most five original chunks ranked by BM25. It rejects missing companies and unsupported annual-report years before retrieval, then uses an LLM evidence-sufficiency check to reject clearly unsupported requests. Uncertain or failed sufficiency checks preserve retrieval. The generator remains fixed. No embeddings, external data sources, stored public-corpus index or hard-coded company answers are used.
